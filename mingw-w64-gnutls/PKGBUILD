@@ -1,0 +1,74 @@
+pkgname=mingw-w64-gnutls
+pkgver=3.5.18
+pkgrel=1
+pkgdesc="A library which provides a secure layer over a reliable transport layer (mingw-w64)"
+arch=('any')
+url="https://www.gnutls.org/"
+license=('GPL')
+makedepends=('mingw-w64-configure')
+depends=('mingw-w64-crt' 'mingw-w64-gmp' 'mingw-w64-libidn2'
+         'mingw-w64-libsystre' 'mingw-w64-libtasn1' 'mingw-w64-nettle'
+         'mingw-w64-p11-kit' 'mingw-w64-libunistring' 'mingw-w64-zlib')
+options=('!zipman' '!strip' '!buildflags' 'staticlibs')
+source=("https://www.gnupg.org/ftp/gcrypt/gnutls/v${pkgver%.*}/gnutls-${pkgver}.tar.xz"{,.sig}
+        "0001-add-missing-define.patch"
+        "0003-gnutls-fix-external-libtasn1-detection.patch")
+sha256sums=('ae2248d9e78747cf9c469dde81ff8f90b56838b707a0637f3f7d4eee90e80234'
+            'SKIP'
+            'fe1d9df924f72ec82972df328467591e49fe82feacebaf2605d37cc059c5429e'
+            'fa81c4be2cdb3743e42ac75983f713223336e515a59cd299eefa9f7e44da13ee')
+validpgpkeys=('0424D4EE81A0E3D119C6F835EDA21E94B565716F'
+              '1F42418905D8206AA754CCDC29EE58B996865171')
+               # "Simon Josefsson <simon@josefsson.org>"
+               # "Nikos Mavrogiannopoulos <nmav@gnutls.org>
+
+_architectures="i686-w64-mingw32 x86_64-w64-mingw32"
+
+prepare() {
+  cd "${srcdir}/gnutls-${pkgver}"
+  patch -p1 -i ${srcdir}/0001-add-missing-define.patch
+  patch -p1 -i ${srcdir}/0003-gnutls-fix-external-libtasn1-detection.patch
+
+  WANT_AUTOMAKE=latest autoreconf -fi -I m4
+}
+
+build() {
+  # Workaround for localtime_r functions
+  CFLAGS+=" -D_POSIX_C_SOURCE"
+  CXXFLAGS+=" -D_POSIX_C_SOURCE"
+  
+  cd "${srcdir}/gnutls-$pkgver/"
+  for _arch in ${_architectures}; do
+    mkdir -p build-${_arch} && pushd build-${_arch}
+    ${_arch}-configure \
+    --with-zlib \
+    --enable-cxx \
+    --disable-nls \
+    --disable-rpath \
+    --disable-gtk-doc \
+    --with-libiconv-prefix=${MINGW_PREFIX} \
+    --with-libregex-libs=-lsystre \
+    --enable-local-libopts \
+    --disable-guile \
+    --disable-libdane \
+    --disable-tests \
+    --with-default-trust-store-pkcs11="pkcs11:model=p11-kit-trust;manufacturer=PKCS%2311%20Kit" \
+    gl_cv_double_slash_root=yes \
+    ..
+    make
+    popd
+  done
+}
+
+package() {
+  for _arch in ${_architectures}; do
+    cd "${srcdir}/gnutls-$pkgver/build-${_arch}"
+    make DESTDIR="${pkgdir}" install
+    
+    find "${pkgdir}/usr/${_arch}" -name '*.def' -o -name '*.exp' | xargs -rtl1 rm
+    
+    ${_arch}-strip --strip-all "$pkgdir"/usr/${_arch}/bin/*.exe
+    ${_arch}-strip --strip-unneeded "$pkgdir"/usr/${_arch}/bin/*.dll
+    ${_arch}-strip -g "$pkgdir"/usr/${_arch}/lib/*.a
+  done
+}
