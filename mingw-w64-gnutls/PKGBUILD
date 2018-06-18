@@ -52,7 +52,6 @@ build() {
     --disable-guile \
     --disable-libdane \
     --disable-tests \
-    --with-default-trust-store-pkcs11="pkcs11:model=p11-kit-trust;manufacturer=PKCS%2311%20Kit" \
     gl_cv_double_slash_root=yes \
     ..
     make
