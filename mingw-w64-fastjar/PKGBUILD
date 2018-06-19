@@ -1,0 +1,34 @@
+# Maintainer: Andrew Sun <adsun701@gmail.com>
+
+pkgname=mingw-w64-fastjar
+pkgver=0.98
+pkgrel=1
+pkgdesc="Sun java jar compatible archiver (mingw-w64)"
+arch=('any')
+url="https://savannah.nongnu.org/projects/fastjar"
+license=('GPL')
+makedepends=('mingw-w64-configure')
+depends=('mingw-w64-zlib' 'mingw-w64-crt')
+options=('!strip' '!buildflags' 'staticlibs')
+source=("https://download.savannah.nongnu.org/releases/fastjar/fastjar-${pkgver}.tar.gz")
+sha256sums=('f156abc5de8658f22ee8f08d7a72c88f9409ebd8c7933e9466b0842afeb2f145')
+
+_architectures="i686-w64-mingw32 x86_64-w64-mingw32"
+
+build() {
+  cd "${srcdir}/fastjar-${pkgver}/"
+  for _arch in ${_architectures}; do
+    mkdir -p build-${_arch} && pushd build-${_arch}
+    ${_arch}-configure ..
+    make
+    popd
+  done
+}
+
+package() {
+  for _arch in ${_architectures}; do
+    cd "${srcdir}/fastjar-${pkgver}/build-${_arch}"
+    make DESTDIR="${pkgdir}" install
+    ${_arch}-strip --strip-unneeded "$pkgdir"/usr/${_arch}/bin/*.exe
+  done
+}
