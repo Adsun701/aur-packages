@@ -29,6 +29,7 @@ package() {
   for _arch in ${_architectures}; do
     cd "${srcdir}/fastjar-${pkgver}/build-${_arch}"
     make DESTDIR="${pkgdir}" install
-    ${_arch}-strip --strip-unneeded "$pkgdir"/usr/${_arch}/bin/*.exe
+    rm -rf "${pkgdir}/usr/${_arch}/share"
+    ${_arch}-strip --strip-unneeded "${pkgdir}"/usr/${_arch}/bin/*.exe
   done
 }
