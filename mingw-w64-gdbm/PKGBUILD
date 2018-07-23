@@ -1,8 +1,5 @@
-# Maintainer: Aleksey Filippov <sarum9in@gmail.com>
-# Contributor: xantares <xantares09 at hotmail dot com>
-
 pkgname=mingw-w64-gdbm
-pkgver=1.14.1
+pkgver=1.16
 pkgrel=1
 pkgdesc="GNU database library (mingw-w64)"
 url="http://www.gnu.org/software/gdbm/gdbm.html"
@@ -11,24 +8,14 @@ arch=('any')
 depends=('mingw-w64-crt' 'mingw-w64-gettext')
 makedepends=('mingw-w64-gcc' 'mingw-w64-wine')
 source=("http://ftp.gnu.org/gnu/gdbm/gdbm-${pkgver}.tar.gz"
-        'gdbm-1.10-zeroheaders.patch'
         'gdbm-win32-support.patch')
 options=('staticlibs' '!buildflags' '!strip')
-md5sums=('c2ddcb3897efa0f57484af2bd4f4f848'
-         'a70b58d3ffbe88a4358aa2c0b0901816'
-         '6f982068efe134f4a31b67d50b0639f1')
+md5sums=('05ee82b8f9188a8228c2384f4b9f2eac'
+         'd9d447151e6f077438d1b0eeda8d8a7f')
 _architectures="i686-w64-mingw32 x86_64-w64-mingw32"
 
 prepare() {
   cd "${srcdir}/gdbm-${pkgver}"
-
-  # Prevent gdbm from storing uninitialized memory content
-  # to database files. This patch improves security, as the
-  # uninitialized memory might contain sensitive informations
-  # from other applications.
-  # https://bugzilla.redhat.com/show_bug.cgi?id=4457
-  # http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=208927
-  patch -Np1 -i ../gdbm-1.10-zeroheaders.patch
 
   # http://pkgs.fedoraproject.org/cgit/mingw-gdbm.git/tree/gdbm-win32-support.patch
   patch -Np1 -i ../gdbm-win32-support.patch
@@ -41,7 +28,7 @@ build() {
   for _arch in ${_architectures}; do
     mkdir -p "build-${_arch}" && pushd "build-${_arch}"
     ${_arch}-configure \
-    --disable-libgdbm-compat \
+    --enable-libgdbm-compat \
     ..
     make
     popd
@@ -51,10 +38,11 @@ build() {
 package() {
   for _arch in ${_architectures}; do
     cd "${srcdir}/gdbm-${pkgver}/build-$_arch"
-    make DESTDIR="$pkgdir" install
-    rm -r "$pkgdir"/usr/${_arch}/share
-    ${_arch}-strip --strip-unneeded "$pkgdir"/usr/${_arch}/bin/*.dll
-    ${_arch}-strip -g "$pkgdir"/usr/${_arch}/lib/*.a
+    make DESTDIR="${pkgdir}" install
+    rm -rf "${pkgdir}"/usr/${_arch}/share
+    ${_arch}-strip --strip-unneeded "${pkgdir}"/usr/${_arch}/bin/*.exe
+    ${_arch}-strip --strip-unneeded "${pkgdir}"/usr/${_arch}/bin/*.dll
+    ${_arch}-strip -g "${pkgdir}"/usr/${_arch}/lib/*.a
 
     # create symlinks for compatibility
     install -dm755 "${pkgdir}"/usr/${_arch}/include/gdbm
