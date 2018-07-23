@@ -6,7 +6,7 @@ url="http://www.gnu.org/software/gdbm/gdbm.html"
 license=('GPL')
 arch=('any')
 depends=('mingw-w64-crt' 'mingw-w64-gettext')
-makedepends=('mingw-w64-gcc' 'mingw-w64-wine')
+makedepends=('mingw-w64-configure' 'mingw-w64-wine')
 source=("http://ftp.gnu.org/gnu/gdbm/gdbm-${pkgver}.tar.gz"
         'gdbm-win32-support.patch')
 options=('staticlibs' '!buildflags' '!strip')
