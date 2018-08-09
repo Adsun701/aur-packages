@@ -1,0 +1,92 @@
+pkgname=mingw-w64-openal
+pkgver=1.18.2
+pkgrel=2
+pkgdesc="Cross-platform 3D audio library, software implementation (mingw-w64)"
+arch=(any)
+url="https://github.com/kcat/openal-soft"
+license=('LGPL')
+depends=('mingw-w64-crt')
+makedepends=('mingw-w64-cmake')
+options=(!strip !buildflags staticlibs)
+source=(http://kcat.strangesoft.net/openal-releases/openal-soft-${pkgver}.tar.bz2
+        0001-versioned-w32-dll.mingw.patch
+        0002-w32ize-portaudio-loading.mingw.patch
+        0003-openal-not-32.mingw.patch
+        0004-disable-OSS-windows.patch
+        0100-dont-specify-macros-as-arg.patch)
+sha256sums=('9f8ac1e27fba15a59758a13f0c7f6540a0605b6c3a691def9d420570506d7e82'
+            'a594fade14f742ad203ec7c995e9e4772e15f133067c2d37cc9477b8c9787d5c'
+            'c97ebc76c1063249a61ae9843405071feb54fae4ef8cba17e82da924f09273a0'
+            '93894676b54415ce9d5c8c75eea28730845ecacfd0726bede2f459ed136da080'
+            'aa6fc2efb76424d0337d609f3002abb8ff179ed15ae633c53433bcb176e643ba'
+            'b6a516e20f5d85e4e94e1f469c23d5f8b5953f7a82c0636b5d68d98e47ce5fd0')
+
+_architectures="i686-w64-mingw32 x86_64-w64-mingw32"
+
+prepare() {
+  cd "${srcdir}/openal-soft-${pkgver}"
+  patch -p1 -i ${srcdir}/0001-versioned-w32-dll.mingw.patch
+  patch -p1 -i ${srcdir}/0002-w32ize-portaudio-loading.mingw.patch
+  patch -p1 -i ${srcdir}/0003-openal-not-32.mingw.patch
+  patch -p1 -i ${srcdir}/0004-disable-OSS-windows.patch
+
+  # Upstream patches
+  patch -p1 -i ${srcdir}/0100-dont-specify-macros-as-arg.patch
+}
+
+build() {
+  cd "${srcdir}/openal-soft-${pkgver}"
+
+  # static
+  for _arch in ${_architectures}; do
+    mkdir -p build-static-${_arch} && pushd build-static-${_arch}
+    DXSDK_DIR=/usr/${_arch} \
+    ${_arch}-cmake \
+      -DALSOFT_EXAMPLES=OFF \
+      -DALSOFT_TESTS=OFF \
+      -DALSOFT_UTILS=OFF \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DLIBTYPE=STATIC \
+      -DDSOUND_INCLUDE_DIR=/usr/${_arch}/include \
+      -DDSOUND_LIBRARY=/usr/${_arch}/lib/libdsound.a \
+      ..
+    make
+    popd
+  done
+
+  # shared
+  for _arch in ${_architectures}; do
+    mkdir -p build-shared-${_arch} && pushd build-shared-${_arch}
+    DXSDK_DIR=/usr/${_arch} \
+    ${_arch}-cmake \
+      -DALSOFT_EXAMPLES=OFF \
+      -DALSOFT_TESTS=OFF \
+      -DALSOFT_UTILS=OFF \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DLIBTYPE=SHARED \
+      -DDSOUND_INCLUDE_DIR=/usr/${_arch}/include \
+      -DDSOUND_LIBRARY=/usr/${_arch}/lib/libdsound.a \
+      ..
+    make
+    popd
+  done
+}
+
+package() {
+  # static
+  for _arch in ${_architectures}; do
+    cd "${srcdir}/openal-soft-${pkgver}/build-static-${_arch}"
+    make DESTDIR="${pkgdir}" install
+    rm -r "$pkgdir"/usr/${_arch}/share
+    ${_arch}-strip -g "$pkgdir"/usr/${_arch}/lib/*.a
+  done
+
+  # shared
+  for _arch in ${_architectures}; do
+    cd "${srcdir}/openal-soft-${pkgver}/build-shared-${_arch}"
+    make DESTDIR="${pkgdir}" install
+    rm -r "$pkgdir"/usr/${_arch}/share
+    ${_arch}-strip --strip-unneeded "$pkgdir"/usr/${_arch}/bin/*.dll
+  done
+}
+
