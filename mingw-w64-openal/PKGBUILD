@@ -1,6 +1,6 @@
 pkgname=mingw-w64-openal
-pkgver=1.18.2
-pkgrel=2
+pkgver=1.19.1
+pkgrel=1
 pkgdesc="Cross-platform 3D audio library, software implementation (mingw-w64)"
 arch=(any)
 url="https://github.com/kcat/openal-soft"
@@ -14,7 +14,7 @@ source=(http://kcat.strangesoft.net/openal-releases/openal-soft-${pkgver}.tar.bz
         0003-openal-not-32.mingw.patch
         0004-disable-OSS-windows.patch
         0100-dont-specify-macros-as-arg.patch)
-sha256sums=('9f8ac1e27fba15a59758a13f0c7f6540a0605b6c3a691def9d420570506d7e82'
+sha256sums=('5c2f87ff5188b95e0dc4769719a9d89ce435b8322b4478b95dd4b427fe84b2e9'
             'a594fade14f742ad203ec7c995e9e4772e15f133067c2d37cc9477b8c9787d5c'
             'c97ebc76c1063249a61ae9843405071feb54fae4ef8cba17e82da924f09273a0'
             '93894676b54415ce9d5c8c75eea28730845ecacfd0726bede2f459ed136da080'
@@ -29,9 +29,6 @@ prepare() {
   patch -p1 -i ${srcdir}/0002-w32ize-portaudio-loading.mingw.patch
   patch -p1 -i ${srcdir}/0003-openal-not-32.mingw.patch
   patch -p1 -i ${srcdir}/0004-disable-OSS-windows.patch
-
-  # Upstream patches
-  patch -p1 -i ${srcdir}/0100-dont-specify-macros-as-arg.patch
 }
 
 build() {
